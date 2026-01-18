@@ -12,7 +12,7 @@
 ## 📖 Overview
 This project was developed for the MLP Project T32024 competition. The objective was to build a machine learning model to predict whether a client would subscribe to a bank term deposit based on direct marketing campaign data (phone calls).
 
-The solution utilizes a sophisticated pipeline involving **advanced feature engineering**, **automated feature selection**, and a **Rank Averaging Ensemble** of three GPU-accelerated models (XGBoost, LightGBM, Random Forest).
+My solution utilizes a sophisticated pipeline involving **advanced feature engineering**, **automated feature selection**, and a **Rank Averaging Ensemble** of three GPU-accelerated models (XGBoost, LightGBM, Random Forest).
 
 ## 📊 Dataset
 The dataset relates to direct marketing campaigns of a Portuguese banking institution.
@@ -28,7 +28,7 @@ The dataset relates to direct marketing campaigns of a Portuguese banking instit
 * **Exploratory Data Analysis:** Analyzed target imbalance, feature distributions, and correlations to identify key predictors like `duration` and `poutcome`.
 
 ### 2. Advanced Feature Engineering
-We expanded the feature space significantly to capture hidden signals:
+I expanded the feature space significantly to capture hidden signals:
 * **Date Decompostion:** Extracted `month`, `year`, `day`, `day_of_week`, and created a binary `weekend` flag from the last contact date.
 * **Log Transformations:** Applied `log(x + 1)` to skewed numerical features (`balance`, `duration`, `campaign`, `pdays`) to improve model convergence.
 * **Interaction Features:** Created crossed features (e.g., `job_education`, `housing_loan`) to capture complex non-linear relationships.
@@ -36,21 +36,24 @@ We expanded the feature space significantly to capture hidden signals:
 
 ### 3. Feature Selection
 To counter the "Curse of Dimensionality" from creating hundreds of interaction features:
-* Used **LightGBM** to estimate feature importance.
+* Used **LightGBM** to estimate feature importance. 
 * Applied `SelectFromModel` to automatically retain only the **Top 100** most predictive features, discarding noise and preventing overfitting.
 
 ### 4. Model Training & Ensembling
-We trained three distinct classifiers using **Stratified K-Fold Cross-Validation** and **RandomizedSearchCV**:
+I trained three distinct classifiers using **Stratified K-Fold Cross-Validation** and **RandomizedSearchCV**:
 1.  **XGBoost:** (GPU-enabled) Optimized for speed and accuracy.
 2.  **LightGBM:** (GPU-enabled) Efficient gradient boosting for categorical data.
 3.  **Random Forest:** (CPU-parallelized) Bagging ensemble to reduce variance.
 
 **Ensemble Strategy:**
-We validated multiple strategies (Simple Average, Weighted Average) and selected **Rank Averaging** as the winner. This method averages the *ranks* of the predicted probabilities rather than the raw values, making the ensemble robust to calibration differences between models.
+I validated multiple strategies (Simple Average, Weighted Average) and selected **Rank Averaging** as the winner. This method averages the *ranks* of the predicted probabilities rather than the raw values, making the ensemble robust to calibration differences between models. 
+
+[Image of ensemble learning techniques]
+
 
 ### 5. Optimization (The "Secret Sauce")
 * **Metric:** Optimized for **ROC AUC** during training to ensure high-quality probability ranking.
-* **Threshold Tuning:** Instead of a default 0.5 cut-off, we performed a dynamic search on the validation set to find the exact probability threshold (approx **0.79**) that maximized the **Macro F1 Score**.
+* **Threshold Tuning:** Instead of a default 0.5 cut-off, I performed a dynamic search on the validation set to find the exact probability threshold (approx **0.79**) that maximized the **Macro F1 Score**.
 
 ## 📈 Performance
 * **Validation F1 Macro:** 0.7837
