@@ -1,100 +1,67 @@
-# 🏦 Predict the Success of Bank Telemarketing  
-**MLP Project T32024** | Competition by `iitmbscs2008p`
+# Predict the Success of Bank Telemarketing 📞🏦
 
-## 📌 Objective  
-Build a classification model to predict whether a client will subscribe to a term deposit based on marketing call data. The goal is to maximize the **F1 score (macro)** on the test set.
+![Status](https://img.shields.io/badge/Status-Completed-success) ![Rank](https://img.shields.io/badge/LB_Rank-6th_%2F_1256-gold) ![Metric](https://img.shields.io/badge/Metric-Macro_F1-blue) ![Language](https://img.shields.io/badge/Python-3.x-yellow)
 
----
+## 🏆 Achievements
+**Finished 6th on the Public Leaderboard** and **32nd on the Private Leaderboard** out of **1,256 participants** (16,543 total submissions).
 
-## 📁 Dataset Description  
+* **Competition:** [Predict the Success of Bank Telemarketing (MLP Project T32024)](https://www.kaggle.com/competitions/predict-the-success-of-bank-telemarketing/overview)
+* **Host:** iitmbscs2008p
+* **Participant:** Sathvik V (Roll No: 22f2001468)
 
-The data is based on direct marketing campaigns of a banking institution via phone calls. Often, multiple contacts with the same client were made. The goal is to predict whether the client will subscribe to a term deposit (`"yes"` or `"no"`).
+## 📖 Overview
+This project was developed for the MLP Project T32024 competition. The objective was to build a machine learning model to predict whether a client would subscribe to a bank term deposit based on direct marketing campaign data (phone calls).
 
-### 🔢 Files Provided
-- `train.csv`: Training dataset
-- `test.csv`: Test dataset (no target column)
-- `sample_submission.csv`: Required submission format
+The solution utilizes a sophisticated pipeline involving **advanced feature engineering**, **automated feature selection**, and a **Rank Averaging Ensemble** of three GPU-accelerated models (XGBoost, LightGBM, Random Forest).
 
-### 🎯 Target Variable
-- `target`: Whether the client subscribed to the deposit plan (binary: `"yes"` / `"no"`)
+## 📊 Dataset
+The dataset relates to direct marketing campaigns of a Portuguese banking institution.
+* **Train Set:** 39,211 samples
+* **Test Set:** 10,000 samples
+* **Input Features:** 15 variables including client demographics (`age`, `job`, `marital`), financial status (`balance`, `loan`), and campaign details (`duration`, `pdays`, `previous`).
+* **Target:** Binary variable (`yes`/`no`) indicating subscription success.
 
-### 🔍 Input Variables
-- `last contact date`: Date of last contact
-- `age`: Age of client (numeric)
-- `job`, `marital`, `education`, `default`, `housing`, `loan`: Client profile attributes (categorical/binary)
-- `balance`, `duration`, `campaign`, `pdays`, `previous`: Numeric campaign stats
-- `contact`, `poutcome`: Contact type & previous campaign result
+## 🛠️ Methodology
 
----
+### 1. Data Processing & EDA
+* **Missing Values:** Handled categorical missing values by filling them with an `'unknown'` token, preserving the signal of missingness.
+* **Exploratory Data Analysis:** Analyzed target imbalance, feature distributions, and correlations to identify key predictors like `duration` and `poutcome`.
 
-## 🧠 Modeling Approach  
+### 2. Advanced Feature Engineering
+We expanded the feature space significantly to capture hidden signals:
+* **Date Decompostion:** Extracted `month`, `year`, `day`, `day_of_week`, and created a binary `weekend` flag from the last contact date.
+* **Log Transformations:** Applied `log(x + 1)` to skewed numerical features (`balance`, `duration`, `campaign`, `pdays`) to improve model convergence.
+* **Interaction Features:** Created crossed features (e.g., `job_education`, `housing_loan`) to capture complex non-linear relationships.
+* **Domain Specifics:** Converted the `-1` value in `pdays` (client not previously contacted) into a specific binary flag `pdays_contacted`.
 
-### 🔨 Tools Used  
-- Python libraries: `pandas`, `numpy`, `scikit-learn`, `imbalanced-learn`, `xgboost`, `lightgbm`, `seaborn`, `matplotlib`
+### 3. Feature Selection
+To counter the "Curse of Dimensionality" from creating hundreds of interaction features:
+* Used **LightGBM** to estimate feature importance.
+* Applied `SelectFromModel` to automatically retain only the **Top 100** most predictive features, discarding noise and preventing overfitting.
 
-### 🧪 Data Preprocessing
-- Imputed missing categorical values with `"unknown"`
-- Extracted date features: `contact_month`, `contact_day`, `contact_dayofweek`, `contact_period`
-- Engineered features:
-  - Interaction features: `job_marital`, `housing_loan`, `campaign_outcome`
-  - Log transformation on skewed numerical features: `balance_log`, `duration_log`, etc.
-- One-hot encoding of categorical variables with `OneHotEncoder`
-- Converted target values: `"yes"` → `1`, `"no"` → `0`
+### 4. Model Training & Ensembling
+We trained three distinct classifiers using **Stratified K-Fold Cross-Validation** and **RandomizedSearchCV**:
+1.  **XGBoost:** (GPU-enabled) Optimized for speed and accuracy.
+2.  **LightGBM:** (GPU-enabled) Efficient gradient boosting for categorical data.
+3.  **Random Forest:** (CPU-parallelized) Bagging ensemble to reduce variance.
 
-### ⚖️ Class Imbalance  
-Used **SMOTE** to oversample the minority class before model training.
+**Ensemble Strategy:**
+We validated multiple strategies (Simple Average, Weighted Average) and selected **Rank Averaging** as the winner. This method averages the *ranks* of the predicted probabilities rather than the raw values, making the ensemble robust to calibration differences between models.
 
-### 🤖 Models Trained  
-- **XGBoostClassifier**
-- **LightGBMClassifier**
-- **RandomForestClassifier**
+### 5. Optimization (The "Secret Sauce")
+* **Metric:** Optimized for **ROC AUC** during training to ensure high-quality probability ranking.
+* **Threshold Tuning:** Instead of a default 0.5 cut-off, we performed a dynamic search on the validation set to find the exact probability threshold (approx **0.79**) that maximized the **Macro F1 Score**.
 
-All models were wrapped in a pipeline (`ImbPipeline`) with SMOTE and tuned using optimal hyperparameters.
+## 📈 Performance
+* **Validation F1 Macro:** 0.7837
+* **Optimal Threshold:** 0.79
+* **Public Leaderboard Rank:** 6th
 
-### 🧩 Ensemble Strategies  
-Tested multiple ensemble methods:
-- Weighted Average
-- Simple Average
-- Soft Voting
-- Hard Voting
-- Stacking (meta-model with Logistic Regression)
-
-Each method was evaluated using **F1 Score (macro)** on validation data. The best-performing strategy was selected for final test prediction.
-
----
-
-## 📊 Evaluation & Visualization
-- Plotted ROC curves for each ensemble method
-- Visualized confusion matrices
-- Displayed feature importance for XGBoost, LightGBM, and Random Forest
-- Compared F1 scores across ensemble methods using bar plots
+## 🚀 How to Run
+1.  Clone the repository.
+2.  Ensure you have the required libraries: `pandas`, `numpy`, `scikit-learn`, `xgboost`, `lightgbm`, `imbalanced-learn`.
+3.  Place `train.csv` and `test.csv` in the input directory.
+4.  Run the notebook `22f2001468-notebook-t32024.ipynb`.
 
 ---
-
-## 📤 Submission Format
-
-| id | target |
-|----|--------|
-| 0  | "yes"  |
-| 1  | "no"   |
-| 2  | "no"   |
-
-File saved as `submission.csv`.
-
----
-
-## 🔗 Notes
-- Notebook name: `YourRollNo-notebook-t32024` (e.g., `22f2001468-notebook-t32024`)
-- Submission shared privately with `iitmbscs2008p`
-- Deadline: **November 30, 2024**
-- Metric: `f1_score(average='macro')`
-
----
-
-## 🏁 Final Remarks  
-This competition gave hands-on experience with:
-- Feature engineering & handling imbalanced data
-- Model ensembling and performance visualization
-- Real-world business classification challenges in banking
-
-The ensemble model with optimized thresholding provided the best generalization performance on validation data.
+*Created by Sathvik V*
